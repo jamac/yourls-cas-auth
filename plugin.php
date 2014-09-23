@@ -28,17 +28,20 @@ function casauth_is_user_valid() {
 
     // Check for authentication
     $auth = phpCAS::checkAuthentication();
+    $admin = yourls_is_admin();
 
     // Not authorized
-    if(!$auth) {
+    if(!$auth && $admin) {
 
         // Send user to CAS login
         phpCAS::forceAuthentication();
 
-    // Authorized
-    } else {
+    }
 
-        // Send user to CAS logout, page flow dies here
+    // Authorized
+    if($auth) {
+
+        // Send user to CAS logout, page flow redirects here
         if(isset($_GET['action']) && $_GET['action'] == 'logout') {
             phpCAS::logoutWithRedirectService(yourls_site_url());
         }
@@ -48,7 +51,7 @@ function casauth_is_user_valid() {
             yourls_set_user($cas_user);
             return true;
         } else {
-            yourls_die(yourls__("You have not been permitted to be here"), yourls__("Unauthorized"), 403);
+            yourls_die(yourls__("You are not permitted to be here"), yourls__("Unauthorized"), 403);
         }
 
     }
@@ -67,17 +70,17 @@ function casauth_is_user_allowed($username) {
 
     global $casauth_user_whitelist;
 
-    // Create a whitelist if none exist
+    // Create a whitelist if none exists
     if(!isset($casauth_user_whitelist) || !is_array($casauth_user_whitelist)) {
         $casauth_user_whitelist = array();
     }
 
-    // $casauth_user_whitelist is empty assume all are allowed
+    // if $casauth_user_whitelist is empty assume all are allowed
     if(count((array) $casauth_user_whitelist)==0) {
         return true;
     }
 
-    // Users in list are allowed
+    // Users in whitelist are allowed
     if(in_array($username, $casauth_user_whitelist, true)) {
         return true;
     }
@@ -88,7 +91,7 @@ function casauth_is_user_allowed($username) {
 
 
 /**
- * Ensure Plugin Environment is prepared
+ * Ensure casauth plugin environment is prepared
  * Include phpCAS, add hooks and filters if everything is fine
  * @return bool preflight successful
  */
@@ -137,7 +140,7 @@ function casauth_preflight() {
 
     if($ok) {
 
-        // Ensure everything else if defined and assign default values
+        // Ensure everything else is defined and assign default values
         if(!defined('CASAUTH_CAS_VERSION'))     define('CASAUTH_CAS_VERSION', CAS_VERSION_2_0);
         if(!defined('CASAUTH_CAS_PORT'))        define('CASAUTH_CAS_PORT', 443);
         if(!defined('CASAUTH_CAS_CACERT'))      define('CASAUTH_CAS_CACERT', false);
