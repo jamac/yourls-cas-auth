@@ -1,6 +1,6 @@
 yourls-cas-auth
 ===============
-A rudimentary [YOURLS](https://github.com/YOURLS/YOURLS) plugin to enable [Central Authentication Service](http://www.jasig.org/cas) for user authentication.
+A rudimentary [YOURLS](https://github.com/YOURLS/YOURLS) plugin to enable [Central Authentication Service](https://www.apereo.org/cas) for user authentication.
 
 Installation
 ------------
