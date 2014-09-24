@@ -19,7 +19,7 @@ if(!defined('YOURLS_ABSPATH')) die();
 function casauth_is_user_valid() {
 
     // Connect to CAS server
-    phpCAS::client(CASAUTH_CAS_VERSION, CASAUTH_CAS_HOST, CASAUTH_CAS_PORT, CASAUTH_CAS_CONTEXT);
+    phpCAS::client(CASAUTH_CAS_VERSION, CASAUTH_CAS_HOST, CASAUTH_CAS_PORT, CASAUTH_CAS_URI);
     if(CASAUTH_CAS_CACERT) {
         phpCAS::setCasServerCACert(CASAUTH_CAS_CACERT);
     } else {
@@ -103,7 +103,7 @@ function casauth_preflight() {
     $requiredDefinitions = array(
         'CASAUTH_CAS_PATH',
         'CASAUTH_CAS_HOST',
-        'CASAUTH_CAS_CONTEXT',
+        'CASAUTH_CAS_URI',
     );
 
     foreach($requiredDefinitions as $definition) {
