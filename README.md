@@ -1,12 +1,12 @@
 yourls-cas-auth
 ===============
-A rudimentary [YOURLS](https://github.com/YOURLS/YOURLS) plugin to enable [Central Authentication Service](https://www.apereo.org/cas) for user authentication.
+A rudimentary [YOURLS][1] plugin to enable [Central Authentication Service][2] for user authentication.
 
 Installation
 ------------
-1. Extract the [latest release of phpCAS](http://downloads.jasig.org/cas-clients/php/current/) to a location php can access.
+1. Extract the [latest release of phpCAS][3] to a location php can access.
 1. In `user/plugins` create a new folder named `cas-auth`.
-1. Extract the latest release of [yourls-cas-auth](https://github.com/jamac/yourls-cas-auth/archive/master.zip) to that folder.
+1. Extract the latest release of [yourls-cas-auth][4] to that folder.
 1. Provide connection details and a user white list to `user/config.php`. (details below)
 1. Go to your Plugins administration page and activate the _CAS Authentication_ plugin
 
@@ -63,7 +63,7 @@ Troubleshooting
 ---------------
 1.  Double check your configuration in `user/config.php`.
 1.  Run around in a circle while crying "The sky is falling!"
-1.  Check the [issue queue](https://github.com/jamac/yourls-cas-auth/issues).
+1.  Check the [issue queue][5].
 
 License
 -------
@@ -80,3 +80,10 @@ License
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+[1]: https://github.com/YOURLS/YOURLS
+[2]: https://www.apereo.org/cas
+[3]: http://downloads.jasig.org/cas-clients/php/current/
+[4]: https://github.com/jamac/yourls-cas-auth/archive/master.zip
+[5]: https://github.com/jamac/yourls-cas-auth/issues
