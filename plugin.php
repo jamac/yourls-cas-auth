@@ -18,28 +18,22 @@ if(!defined('YOURLS_ABSPATH')) die();
  */
 function casauth_is_user_valid() {
 
-    // Connect to CAS server
-    phpCAS::client(CASAUTH_CAS_VERSION, CASAUTH_CAS_HOST, CASAUTH_CAS_PORT, CASAUTH_CAS_URI);
-    if(CASAUTH_CAS_CACERT) {
-        phpCAS::setCasServerCACert(CASAUTH_CAS_CACERT);
-    } else {
-        phpCAS::setNoCasServerValidation();
-    }
+    // Only check auth on admin pages
+    if(yourls_is_admin()) {
 
-    // Check for authentication
-    $auth = phpCAS::checkAuthentication();
-    $admin = yourls_is_admin();
+        // Connect to CAS server
+        phpCAS::client(CASAUTH_CAS_VERSION, CASAUTH_CAS_HOST, CASAUTH_CAS_PORT, CASAUTH_CAS_URI);
+        if(CASAUTH_CAS_CACERT) {
+            phpCAS::setCasServerCACert(CASAUTH_CAS_CACERT);
+        } else {
+            phpCAS::setNoCasServerValidation();
+        }
 
-    // Not authorized
-    if(!$auth && $admin) {
+        // Check for authentication
+        $auth = phpCAS::checkAuthentication();
 
-        // Send user to CAS login
-        phpCAS::forceAuthentication();
-
-    }
-
-    // Authorized
-    if($auth) {
+        // Not authorized
+        if(!$auth) phpCAS::forceAuthentication();
 
         // Send user to CAS logout, page flow redirects here
         if(isset($_GET['action']) && $_GET['action'] == 'logout') {
