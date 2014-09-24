@@ -27,6 +27,8 @@ At minimum you must define the following:
 
 -   `CASAUTH_CAS_HOST` The hostname of your CAS server.
 
+	_eg_ `cas.server.com`
+
 -   `CASAUTH_CAS_URI` The URI your CAS server is responding on.
 
     _eg_ `/cas`
