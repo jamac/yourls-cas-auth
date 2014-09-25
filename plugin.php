@@ -19,18 +19,27 @@ if(!defined('YOURLS_ABSPATH')) die();
 function casauth_is_valid_user() {
 
     // Check CAS for validation
-    return (bool) phpCAS::checkAuthentication();
+    $auth = phpCAS::checkAuthentication();
+
+    if($auth) {
+        $username = phpCAS::getUser();
+        if(casauth_is_user_allowed($username)) {
+            return true;
+        }
+    }
+
+    return false;
 
 } // casauth_is_valid_user
 
 
 /**
- * Send user to CAS if auth is required
+ * Send user to CAS for authentication
  */
 function casauth_require_auth() {
 
+    // Sent to CAS for authentication
     phpCAS::forceAuthentication();
-    yourls_do_action('auth_successful');
 
 } // function casauth_require_auth
 
@@ -42,16 +51,26 @@ function casauth_require_auth() {
 function casauth_login() {
 
     global $yourls_user_passwords;
-    global $casauth_user_whitelist;
 
     $username = phpCAS::getUser();
 
-    if(casauth_is_user_allowed($username)) {
+    if($username) {
         $yourls_user_passwords[$username] = uniqid("",true);
         yourls_set_user($username);
     }
 
 }
+
+
+/**
+ * Handle failed logins
+ */
+function casauth_login_failed() {
+
+    casauth_void_session();
+    yourls_die(yourls__("You are not permitted to be here."), yourls__("Unauthorized"), 403);
+
+} // function casauth_login_failed
 
 
 /**
@@ -86,12 +105,11 @@ function casauth_is_user_allowed($username) {
     }
 
     // Users in whitelist are allowed
-    if(in_array($username, $casauth_user_whitelist, true)) {
+    if($username && in_array($username, $casauth_user_whitelist, true)) {
         return true;
     }
 
-    casauth_void_session();
-    yourls_die(yourls__("You are not permitted to be here"), yourls__("Unauthorized"), 403);
+    return false;
 
 } // casauth_is_user_allowed
 
@@ -172,6 +190,7 @@ function casauth_preflight() {
         yourls_add_filter('is_valid_user', 'casauth_is_valid_user');
         yourls_add_action('require_auth', 'casauth_require_auth');
         yourls_add_action('login', 'casauth_login');
+        yourls_add_action('login_failed', 'casauth_login_failed');
         yourls_add_action('logout', 'casauth_logout');
 
     }
