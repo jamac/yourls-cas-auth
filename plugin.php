@@ -13,50 +13,61 @@ if(!defined('YOURLS_ABSPATH')) die();
 
 
 /**
- * Login & Logout via CAS, bypassing YOURLS login entirely
+ * Check if user is validated via CAS
  * @return bool user is valid
  */
-function casauth_is_user_valid() {
+function casauth_is_valid_user() {
 
-    // Only check auth on admin pages
-    if(yourls_is_admin()) {
+    // Check CAS for validation
+    return (bool) phpCAS::checkAuthentication();
 
-        // Connect to CAS server
-        phpCAS::client(CASAUTH_CAS_VERSION, CASAUTH_CAS_HOST, CASAUTH_CAS_PORT, CASAUTH_CAS_URI);
-        if(CASAUTH_CAS_CACERT) {
-            phpCAS::setCasServerCACert(CASAUTH_CAS_CACERT);
-        } else {
-            phpCAS::setNoCasServerValidation();
-        }
-
-        // Check for authentication
-        $auth = phpCAS::checkAuthentication();
-
-        // Not authorized
-        if(!$auth) phpCAS::forceAuthentication();
-
-        // Send user to CAS logout, page flow redirects here
-        if(isset($_GET['action']) && $_GET['action'] == 'logout') {
-            phpCAS::logoutWithRedirectService(yourls_site_url());
-        }
-
-        $cas_user = phpCAS::getUser();
-        if(casauth_is_user_allowed($cas_user)) {
-            yourls_set_user($cas_user);
-            return true;
-        } else {
-            yourls_die(yourls__("You are not permitted to be here"), yourls__("Unauthorized"), 403);
-        }
-
-    }
-
-    return false;
-
-} // casauth_is_user_valid
+} // casauth_is_valid_user
 
 
 /**
- * Check username against whitelist
+ * Send user to CAS if auth is required
+ */
+function casauth_require_auth() {
+
+    phpCAS::forceAuthentication();
+    yourls_do_action('auth_successful');
+
+} // function casauth_require_auth
+
+
+/**
+ * Authentication is successful
+ * Convince YOURLS that everything is OK.
+ */
+function casauth_login() {
+
+    global $yourls_user_passwords;
+    global $casauth_user_whitelist;
+
+    $username = phpCAS::getUser();
+
+    if(casauth_is_user_allowed($username)) {
+        $yourls_user_passwords[$username] = uniqid("",true);
+        yourls_set_user($username);
+    }
+
+}
+
+
+/**
+ * Send user to CAS for logout
+ */
+function casauth_logout() {
+
+    // CAS will halt page load and redirect. Destroy what we can here.
+    casauth_void_session();
+    phpCAS::logoutWithRedirectService(yourls_site_url());
+
+}
+
+
+/**
+ * Check username against plugin whitelist
  * @param string $username name to check in whitelist
  * @return bool user is allowed
  */
@@ -79,10 +90,19 @@ function casauth_is_user_allowed($username) {
         return true;
     }
 
-    return false;
+    casauth_void_session();
+    yourls_die(yourls__("You are not permitted to be here"), yourls__("Unauthorized"), 403);
 
 } // casauth_is_user_allowed
 
+
+/**
+ * Void any cookies that may be set
+ */
+function casauth_void_session() {
+	setcookie('PHPSESSID', '', 0, '/');
+	yourls_store_cookie(null);
+}
 
 /**
  * Ensure casauth plugin environment is prepared
@@ -95,6 +115,8 @@ function casauth_preflight() {
 
     // Quick exit conditions
     if(yourls_is_API()) return $ok;
+    if(!yourls_is_private()) return $ok;
+    if(!yourls_is_admin()) return $ok;
 
     // Definitions that must be set
     $requiredDefinitions = array(
@@ -108,8 +130,6 @@ function casauth_preflight() {
         if(!defined($definition) || !constant($definition)) {
 
             $ok = false;
-            // TODO: Find a way to only show to longed in users.
-            // May not be trivial. I fear this happens before auth.
             yourls_add_notice($definition . yourls__(' not defined for ') . yourls_plugin_basename(__FILE__), 'error');
 
         }
@@ -138,9 +158,21 @@ function casauth_preflight() {
         if(!defined('CASAUTH_CAS_VERSION'))     define('CASAUTH_CAS_VERSION', CAS_VERSION_2_0);
         if(!defined('CASAUTH_CAS_PORT'))        define('CASAUTH_CAS_PORT', 443);
         if(!defined('CASAUTH_CAS_CACERT'))      define('CASAUTH_CAS_CACERT', false);
+        if(!defined('YOURLS_NO_HASH_PASSWORD')) define('YOURLS_NO_HASH_PASSWORD', true);
+
+        // Connect to CAS server
+        phpCAS::client(CASAUTH_CAS_VERSION, CASAUTH_CAS_HOST, CASAUTH_CAS_PORT, CASAUTH_CAS_URI);
+        if(CASAUTH_CAS_CACERT) {
+            phpCAS::setCasServerCACert(CASAUTH_CAS_CACERT);
+        } else {
+            phpCAS::setNoCasServerValidation();
+        }
 
         // Start adding our hooks and filters
-        yourls_add_filter('shunt_is_valid_user', 'casauth_is_user_valid');
+        yourls_add_filter('is_valid_user', 'casauth_is_valid_user');
+        yourls_add_action('require_auth', 'casauth_require_auth');
+        yourls_add_action('login', 'casauth_login');
+        yourls_add_action('logout', 'casauth_logout');
 
     }
 
